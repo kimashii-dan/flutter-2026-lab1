@@ -7,6 +7,7 @@ import 'package:campus_events/routes.dart';
 import 'package:campus_events/screens/favourites_tab.dart';
 import 'package:campus_events/screens/list_tab.dart';
 import 'package:campus_events/screens/profile_tab.dart';
+import 'package:campus_events/widgets/confirm.dart';
 
 class Shell extends StatefulWidget {
   const Shell({super.key});
@@ -66,11 +67,64 @@ class _ShellState extends State<Shell> {
 
   void _goTo(int tab) => setState(() => _tab = tab);
 
+  void _about() {
+    Navigator.pop(context);
+    showDialog<void>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('About'),
+        content: const Text('Campus Events: find and join events on campus.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _reset() async {
+    Navigator.pop(context);
+    final ok = await confirm(
+      context,
+      'Reset data?',
+      'Events and your profile will be restored.',
+    );
+    if (!ok || !mounted) return;
+    setState(() {
+      _events = seedEvents();
+      _profile = const Profile.empty();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(const ['Events', 'Favourites', 'Profile'][_tab]),
+      ),
+      drawer: Drawer(
+        child: ListView(
+          children: [
+            DrawerHeader(
+              child: Text(
+                'Campus Events',
+                style: Theme.of(context).textTheme.headlineSmall,
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.info_outline),
+              title: const Text('About'),
+              onTap: _about,
+            ),
+            ListTile(
+              leading: const Icon(Icons.restore),
+              title: const Text('Reset data'),
+              onTap: _reset,
+            ),
+          ],
+        ),
       ),
       body: switch (_tab) {
         0 => ListTab(
