@@ -23,11 +23,23 @@ class EventsView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(8),
-      itemCount: events.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 4),
-      itemBuilder: (_, index) => _card(events[index]),
+    return LayoutBuilder(
+      builder: (context, constraints) => constraints.maxWidth < 600
+          ? ListView.separated(
+              padding: const EdgeInsets.all(8),
+              itemCount: events.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 4),
+              itemBuilder: (_, index) => _card(events[index]),
+            )
+          : GridView.builder(
+              padding: const EdgeInsets.all(8),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 360,
+                childAspectRatio: 2,
+              ),
+              itemCount: events.length,
+              itemBuilder: (_, index) => _card(events[index]),
+            ),
     );
   }
 }

@@ -10,7 +10,14 @@ import 'package:campus_events/screens/profile_tab.dart';
 import 'package:campus_events/widgets/confirm.dart';
 
 class Shell extends StatefulWidget {
-  const Shell({super.key});
+  const Shell({
+    super.key,
+    required this.themeMode,
+    required this.onThemeModeChanged,
+  });
+
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   @override
   State<Shell> createState() => _ShellState();
@@ -142,6 +149,8 @@ class _ShellState extends State<Shell> {
           profile: _profile,
           events: _events,
           onChanged: _setProfile,
+          themeMode: widget.themeMode,
+          onThemeModeChanged: widget.onThemeModeChanged,
         ),
       },
       floatingActionButton: _tab == 0

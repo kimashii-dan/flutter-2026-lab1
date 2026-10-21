@@ -9,11 +9,15 @@ class ProfileTab extends StatefulWidget {
     required this.profile,
     required this.events,
     required this.onChanged,
+    required this.themeMode,
+    required this.onThemeModeChanged,
   });
 
   final Profile profile;
   final List<Event> events;
   final ValueChanged<Profile> onChanged;
+  final ThemeMode themeMode;
+  final ValueChanged<ThemeMode> onThemeModeChanged;
 
   @override
   State<ProfileTab> createState() => _ProfileTabState();
@@ -93,6 +97,20 @@ class _ProfileTabState extends State<ProfileTab> {
           Text(
             'You are on $lists lists',
             style: Theme.of(context).textTheme.titleMedium,
+          ),
+          const SizedBox(height: 24),
+          Text('Theme', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            children: [
+              for (final mode in ThemeMode.values)
+                ChoiceChip(
+                  label: Text(mode.name),
+                  selected: widget.themeMode == mode,
+                  onSelected: (_) => widget.onThemeModeChanged(mode),
+                ),
+            ],
           ),
         ],
       ),
