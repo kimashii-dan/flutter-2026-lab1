@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:campus_events/models/event.dart';
 import 'package:campus_events/routes.dart';
 import 'package:campus_events/utils/format.dart';
+import 'package:campus_events/widgets/confirm.dart';
 
 class FormScreen extends StatefulWidget {
   const FormScreen({super.key, required this.args});
@@ -29,6 +30,7 @@ class _FormScreenState extends State<FormScreen> {
   TimeOfDay? _time;
   bool _online = false;
   bool _saving = false;
+  late final Record _initial;
 
   bool get _isNew => widget.args.event == null;
 
@@ -42,6 +44,19 @@ class _FormScreenState extends State<FormScreen> {
     ),
     _ => null,
   };
+
+  Record get _values => (
+    _title.text,
+    _location.text,
+    _capacity.text,
+    _description.text,
+    _category,
+    _date,
+    _time,
+    _online,
+  );
+
+  bool get _dirty => _values != _initial;
 
   @override
   void initState() {
@@ -62,6 +77,7 @@ class _FormScreenState extends State<FormScreen> {
         existing.startsAt.minute,
       );
     }
+    _initial = _values;
   }
 
   @override
@@ -76,6 +92,52 @@ class _FormScreenState extends State<FormScreen> {
     _capacityFocus.dispose();
     _descriptionFocus.dispose();
     super.dispose();
+  }
+
+  String? _validateTitle(String? value) {
+    final length = value?.trim().length ?? 0;
+    return length < 3 || length > 60 ? 'Title must be 3–60 characters' : null;
+  }
+
+  String? _validateCategory(EventCategory? value) =>
+      value == null ? 'Choose a category' : null;
+
+  String? _validateDate(String? _) => _date == null ? 'Pick a date' : null;
+
+  String? _validateTime(String? _) {
+    final startsAt = _startsAt;
+    if (_time == null) return 'Pick a time';
+    if (_isNew && startsAt != null && startsAt.isBefore(DateTime.now())) {
+      return 'Must be in the future';
+    }
+    return null;
+  }
+
+  String? _validateLocation(String? value) {
+    final location = value?.trim() ?? '';
+    if (location.isEmpty) return _online ? 'Enter a link' : 'Enter a location';
+    if (_online && !location.contains('://')) return 'Link must contain ://';
+    return null;
+  }
+
+  String? _validateCapacity(String? value) {
+    final capacity = int.tryParse(value ?? '');
+    final count = widget.args.event?.count ?? 0;
+    if (capacity == null || capacity < 1 || capacity > 500) {
+      return 'Enter a number from 1 to 500';
+    }
+    if (capacity < count) return 'Cannot be below $count registered';
+    return null;
+  }
+
+  Future<void> _onPop(bool didPop, Event? result) async {
+    if (didPop || _saving) return;
+    final discard = await confirm(
+      context,
+      'Discard changes?',
+      'Your changes will be lost.',
+    );
+    if (discard && mounted) Navigator.pop(context);
   }
 
   void _unfocus(PointerDownEvent _) => FocusScope.of(context).unfocus();
@@ -139,99 +201,116 @@ class _FormScreenState extends State<FormScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(_isNew ? 'New event' : 'Edit event')),
-      body: Form(
-        key: _formKey,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            spacing: 16,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                controller: _title,
-                decoration: const InputDecoration(labelText: 'Title'),
-                maxLength: 60,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => _locationFocus.requestFocus(),
-                onTapOutside: _unfocus,
-              ),
-              DropdownButtonFormField<EventCategory>(
-                initialValue: _category,
-                decoration: const InputDecoration(labelText: 'Category'),
-                items: [
-                  for (final category in EventCategory.values)
-                    DropdownMenuItem(
-                      value: category,
-                      child: Text(category.label),
-                    ),
-                ],
-                onChanged: (value) => setState(() => _category = value),
-              ),
-              TextFormField(
-                controller: _dateText,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Date',
-                  suffixIcon: Icon(Icons.calendar_today),
+    return PopScope<Event>(
+      canPop: !_dirty,
+      onPopInvokedWithResult: _onPop,
+      child: Scaffold(
+        appBar: AppBar(title: Text(_isNew ? 'New event' : 'Edit event')),
+        body: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          onChanged: () => setState(() {}),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              spacing: 16,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                TextFormField(
+                  controller: _title,
+                  decoration: const InputDecoration(labelText: 'Title'),
+                  maxLength: 60,
+                  validator: _validateTitle,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _locationFocus.requestFocus(),
+                  onTapOutside: _unfocus,
                 ),
-                onTap: _pickDate,
-              ),
-              TextFormField(
-                controller: _timeText,
-                readOnly: true,
-                decoration: const InputDecoration(
-                  labelText: 'Time',
-                  suffixIcon: Icon(Icons.access_time),
+                DropdownButtonFormField<EventCategory>(
+                  initialValue: _category,
+                  decoration: const InputDecoration(labelText: 'Category'),
+                  items: [
+                    for (final category in EventCategory.values)
+                      DropdownMenuItem(
+                        value: category,
+                        child: Text(category.label),
+                      ),
+                  ],
+                  onChanged: (value) => setState(() => _category = value),
+                  validator: _validateCategory,
                 ),
-                onTap: _pickTime,
-              ),
-              SwitchListTile(
-                title: const Text('Online'),
-                value: _online,
-                onChanged: (value) => setState(() => _online = value),
-              ),
-              TextFormField(
-                controller: _location,
-                focusNode: _locationFocus,
-                decoration: InputDecoration(
-                  labelText: _online ? 'Link' : 'Location',
+                TextFormField(
+                  controller: _dateText,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Date',
+                    suffixIcon: Icon(Icons.calendar_today),
+                  ),
+                  onTap: _pickDate,
+                  validator: _validateDate,
                 ),
-                keyboardType: _online ? TextInputType.url : TextInputType.text,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => _capacityFocus.requestFocus(),
-                onTapOutside: _unfocus,
-              ),
-              TextFormField(
-                controller: _capacity,
-                focusNode: _capacityFocus,
-                decoration: const InputDecoration(labelText: 'Capacity'),
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.next,
-                onFieldSubmitted: (_) => _descriptionFocus.requestFocus(),
-                onTapOutside: _unfocus,
-              ),
-              TextFormField(
-                controller: _description,
-                focusNode: _descriptionFocus,
-                decoration: const InputDecoration(
-                  labelText: 'Description (optional)',
+                TextFormField(
+                  controller: _timeText,
+                  readOnly: true,
+                  decoration: const InputDecoration(
+                    labelText: 'Time',
+                    suffixIcon: Icon(Icons.access_time),
+                  ),
+                  onTap: _pickTime,
+                  validator: _validateTime,
                 ),
-                maxLines: 3,
-                textInputAction: TextInputAction.done,
-                onTapOutside: _unfocus,
-              ),
-              FilledButton(
-                onPressed: _saving ? null : _save,
-                child: _saving
-                    ? const SizedBox.square(
-                        dimension: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
-                      )
-                    : const Text('Save'),
-              ),
-            ],
+                SwitchListTile(
+                  title: const Text('Online'),
+                  value: _online,
+                  onChanged: (value) => setState(() => _online = value),
+                ),
+                TextFormField(
+                  controller: _location,
+                  focusNode: _locationFocus,
+                  decoration: InputDecoration(
+                    labelText: _online ? 'Link' : 'Location',
+                  ),
+                  keyboardType: _online
+                      ? TextInputType.url
+                      : TextInputType.text,
+                  validator: _validateLocation,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _capacityFocus.requestFocus(),
+                  onTapOutside: _unfocus,
+                ),
+                TextFormField(
+                  controller: _capacity,
+                  focusNode: _capacityFocus,
+                  decoration: const InputDecoration(labelText: 'Capacity'),
+                  keyboardType: TextInputType.number,
+                  validator: _validateCapacity,
+                  textInputAction: TextInputAction.next,
+                  onFieldSubmitted: (_) => _descriptionFocus.requestFocus(),
+                  onTapOutside: _unfocus,
+                ),
+                TextFormField(
+                  controller: _description,
+                  focusNode: _descriptionFocus,
+                  decoration: const InputDecoration(
+                    labelText: 'Description (optional)',
+                  ),
+                  maxLines: 3,
+                  validator: (value) => (value?.length ?? 0) > 200
+                      ? 'At most 200 characters'
+                      : null,
+                  textInputAction: TextInputAction.done,
+                  onTapOutside: _unfocus,
+                ),
+                FilledButton(
+                  onPressed: _saving ? null : _save,
+                  child: _saving
+                      ? const SizedBox.square(
+                          dimension: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('Save'),
+                ),
+              ],
+            ),
           ),
         ),
       ),
