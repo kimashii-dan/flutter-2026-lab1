@@ -157,22 +157,21 @@ class _DetailScreenState extends State<DetailScreen> {
                   ListView(
                     children: [
                       ListTile(
-                        leading: const Icon(Icons.schedule),
-                        title: Text(formatDateTime(_event.startsAt)),
+                        title: const Text('Starts'),
+                        subtitle: Text(formatDateTime(_event.startsAt)),
                       ),
                       ListTile(
-                        leading: Icon(_event.online ? Icons.link : Icons.place),
-                        title: Text(_event.location),
+                        title: Text(_event.online ? 'Link' : 'Place'),
+                        subtitle: Text(_event.location),
                       ),
                       ListTile(
-                        leading: const Icon(Icons.people),
-                        title: Text('$taken / ${_event.capacity} taken'),
-                        subtitle: Text('$free free'),
+                        title: const Text('Places'),
+                        subtitle: Text('$taken taken, $free free'),
                       ),
                       if (_event.description case final description?)
                         ListTile(
-                          leading: const Icon(Icons.notes),
-                          title: Text(description),
+                          title: const Text('Description'),
+                          subtitle: Text(description),
                         ),
                     ],
                   ),
@@ -185,7 +184,6 @@ class _DetailScreenState extends State<DetailScreen> {
                           children: [
                             for (final name in _event.attendees)
                               ListTile(
-                                leading: const Icon(Icons.person),
                                 title: Text(name),
                                 selected: name == me,
                                 trailing: name == me ? const Text('You') : null,

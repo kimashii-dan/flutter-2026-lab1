@@ -120,16 +120,8 @@ class _ShellState extends State<Shell> {
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
             ),
-            ListTile(
-              leading: const Icon(Icons.info_outline),
-              title: const Text('About'),
-              onTap: _about,
-            ),
-            ListTile(
-              leading: const Icon(Icons.restore),
-              title: const Text('Reset data'),
-              onTap: _reset,
-            ),
+            ListTile(title: const Text('About'), onTap: _about),
+            ListTile(title: const Text('Reset data'), onTap: _reset),
           ],
         ),
       ),
