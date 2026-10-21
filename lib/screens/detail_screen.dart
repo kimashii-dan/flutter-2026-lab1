@@ -66,6 +66,17 @@ class _DetailScreenState extends State<DetailScreen> {
     widget.args.onChanged(_event);
   }
 
+  Future<void> _edit() async {
+    final event = await Navigator.pushNamed<Event>(
+      context,
+      Routes.form,
+      arguments: FormArgs(event: _event),
+    );
+    if (event == null || !mounted) return;
+    setState(() => _event = event);
+    widget.args.onChanged(event);
+  }
+
   Future<void> _delete() async {
     final ok = await confirm(
       context,
@@ -99,6 +110,7 @@ class _DetailScreenState extends State<DetailScreen> {
             PopupMenuButton<VoidCallback>(
               onSelected: (action) => action(),
               itemBuilder: (_) => [
+                PopupMenuItem(value: _edit, child: const Text('Edit')),
                 PopupMenuItem(value: _delete, child: const Text('Delete')),
               ],
             ),

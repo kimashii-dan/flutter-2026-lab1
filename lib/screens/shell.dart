@@ -49,6 +49,16 @@ class _ShellState extends State<Shell> {
     );
   }
 
+  Future<void> _create() async {
+    final event = await Navigator.pushNamed<Event>(
+      context,
+      Routes.form,
+      arguments: const FormArgs(),
+    );
+    if (event == null || !mounted) return;
+    setState(() => _events = [..._events, event]);
+  }
+
   void _openProfile() {
     Navigator.popUntil(context, (route) => route.isFirst);
     _goTo(2);
@@ -80,6 +90,12 @@ class _ShellState extends State<Shell> {
           onChanged: _setProfile,
         ),
       },
+      floatingActionButton: _tab == 0
+          ? FloatingActionButton(
+              onPressed: _create,
+              child: const Icon(Icons.add),
+            )
+          : null,
       bottomNavigationBar: NavigationBar(
         selectedIndex: _tab,
         onDestinationSelected: _goTo,
