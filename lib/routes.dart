@@ -9,10 +9,19 @@ class Routes {
 }
 
 class DetailArgs {
-  const DetailArgs({required this.event, required this.userName});
+  const DetailArgs({
+    required this.event,
+    required this.userName,
+    required this.onChanged,
+    required this.onDelete,
+    required this.onOpenProfile,
+  });
 
   final Event event;
   final String userName;
+  final ValueChanged<Event> onChanged;
+  final ValueChanged<Event> onDelete;
+  final VoidCallback onOpenProfile;
 }
 
 Route<dynamic>? onGenerateRoute(RouteSettings settings) {

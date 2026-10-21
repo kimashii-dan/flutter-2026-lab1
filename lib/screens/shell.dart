@@ -20,14 +20,18 @@ class _ShellState extends State<Shell> {
   Profile _profile = const Profile.empty();
   int _tab = 0;
 
-  void _toggleFavourite(Event event) {
+  void _update(Event event) {
     setState(
-      () => _events = [
-        for (final e in _events)
-          e.id == event.id ? e.copyWith(favourite: !e.favourite) : e,
-      ],
+      () => _events = [for (final e in _events) e.id == event.id ? event : e],
     );
   }
+
+  void _delete(Event event) {
+    setState(() => _events = _events.where((e) => e.id != event.id).toList());
+  }
+
+  void _toggleFavourite(Event event) =>
+      _update(event.copyWith(favourite: !event.favourite));
 
   void _setProfile(Profile profile) => setState(() => _profile = profile);
 
@@ -35,8 +39,19 @@ class _ShellState extends State<Shell> {
     Navigator.pushNamed(
       context,
       Routes.detail,
-      arguments: DetailArgs(event: event, userName: _profile.name),
+      arguments: DetailArgs(
+        event: event,
+        userName: _profile.name,
+        onChanged: _update,
+        onDelete: _delete,
+        onOpenProfile: _openProfile,
+      ),
     );
+  }
+
+  void _openProfile() {
+    Navigator.popUntil(context, (route) => route.isFirst);
+    _goTo(2);
   }
 
   void _goTo(int tab) => setState(() => _tab = tab);
