@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:campus_events/data/seed.dart';
 import 'package:campus_events/models/event.dart';
 import 'package:campus_events/models/profile.dart';
+import 'package:campus_events/routes.dart';
 import 'package:campus_events/screens/favourites_tab.dart';
 import 'package:campus_events/screens/list_tab.dart';
 import 'package:campus_events/screens/profile_tab.dart';
@@ -30,6 +31,14 @@ class _ShellState extends State<Shell> {
 
   void _setProfile(Profile profile) => setState(() => _profile = profile);
 
+  void _openDetail(Event event) {
+    Navigator.pushNamed(
+      context,
+      Routes.detail,
+      arguments: DetailArgs(event: event, userName: _profile.name),
+    );
+  }
+
   void _goTo(int tab) => setState(() => _tab = tab);
 
   @override
@@ -41,12 +50,12 @@ class _ShellState extends State<Shell> {
       body: switch (_tab) {
         0 => ListTab(
           events: _events,
-          onOpen: (_) {},
+          onOpen: _openDetail,
           onFavourite: _toggleFavourite,
         ),
         1 => FavouritesTab(
           events: _events,
-          onOpen: (_) {},
+          onOpen: _openDetail,
           onFavourite: _toggleFavourite,
           onBrowse: () => _goTo(0),
         ),
